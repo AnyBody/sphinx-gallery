@@ -605,7 +605,7 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
         sys.argv[1:] = []
 
     for blabel, bcontent, lineno in script_blocks:
-        if blabel == 'code':
+        if blabel == 'code' and gallery_conf['show_code_section']:
             code_output, rtime = execute_code_block(compiler, src_file,
                                                     bcontent, lineno,
                                                     example_globals,
@@ -644,8 +644,8 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
     time_m, time_s = divmod(time_elapsed, 60)
     example_nb = jupyter_notebook(script_blocks)
     save_notebook(example_nb, example_file.replace('.py', '.ipynb'))
-    with codecs.open(os.path.join(target_dir, base_image_name + '.rst'),
-                     mode='w', encoding='utf-8') as f:
+
+    if gallery_conf['show_code_section']:
         if time_elapsed >= gallery_conf["min_reported_time"]:
             example_rst += ("**Total running time of the script:**"
                             " ({0: .0f} minutes {1: .3f} seconds)\n\n".format(
@@ -653,6 +653,9 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
         example_rst += CODE_DOWNLOAD.format(fname,
                                             fname.replace('.py', '.ipynb'))
         example_rst += SPHX_GLR_SIG
+
+    with codecs.open(os.path.join(target_dir, base_image_name + '.rst'),
+                     mode='w', encoding='utf-8') as f:
         f.write(example_rst)
 
     if block_vars['execute_script']:
