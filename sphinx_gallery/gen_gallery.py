@@ -51,6 +51,7 @@ DEFAULT_GALLERY_CONF = {
     'thumbnail_size': (400, 280),  # Default CSS does 0.4 scaling (160, 112)
     'min_reported_time': 0,
     'show_code_section': True,
+    'is_egg_file': False
 }
 
 logger = sphinx_compatibility.getLogger('sphinx-gallery')
@@ -137,7 +138,8 @@ If you don't care about this features set in your conf.py
 
     # this assures I can call the config in other places
     app.config.sphinx_gallery_conf = gallery_conf
-    app.config.html_static_path.append(glr_path_static())
+    if not gallery_conf['is_egg_file']:
+        app.config.html_static_path.append(glr_path_static())
 
     return gallery_conf
 
