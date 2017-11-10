@@ -35,6 +35,7 @@ DEFAULT_GALLERY_CONF = {
     'within_subsection_order': NumberOfCodeLinesSortKey,
     'gallery_dirs': 'auto_examples',
     'backreferences_dir': None,
+    'backreferences_heading': True,
     'doc_module': (),
     'reference_url': {},
     # Build options

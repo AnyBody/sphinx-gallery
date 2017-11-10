@@ -208,7 +208,7 @@ def write_backreferences(seen_backrefs, gallery_conf,
                                     '%s.examples' % backref)
         seen = backref in seen_backrefs
         with open(include_path, 'a' if seen else 'w') as ex_file:
-            if not seen:
+            if not seen and gallery_conf['backreferences_heading']:
                 heading = '\n\nExamples using ``%s``' % backref
                 ex_file.write(heading + '\n')
                 ex_file.write('^' * len(heading) + '\n')
