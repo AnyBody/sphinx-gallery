@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+.coverage*
 
 # C extensions
 *.so
@@ -41,6 +42,8 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.orig
+.pytest_cache
+CHANGELOG.md
 
 # Translations
 *.mo
@@ -60,6 +63,7 @@ doc/gen_modules/
 sphinx_gallery/tests/tinybuild/gen_modules/
 sphinx_gallery/tests/tinybuild/auto_examples/
 sphinx_gallery/tests/tinybuild/_build/
+sphinx_gallery/tests/tinybuild/tiny_html/
 
 # PyBuilder
 target/
@@ -67,3 +71,9 @@ target/
 # General temporary files to ignore
 *.swp
 *.swo
+
+# VisualStudioCode
+.history
+
+# Jupyter notebooks
+.ipynb_checkpoints

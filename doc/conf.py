@@ -15,7 +15,11 @@
 import sys
 import os
 from datetime import date
+import warnings
+
 import sphinx_gallery
+from sphinx_gallery.sorting import FileNameSortKey
+import sphinx_rtd_theme
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -33,6 +37,7 @@ import sphinx_gallery
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
@@ -59,7 +64,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Sphinx-Gallery'
-copyright = u'2014-%s, Óscar Nájera' % date.today().year
+copyright = u'2014-%s, Sphinx-gallery developers' % date.today().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -86,8 +91,7 @@ exclude_patterns = ['_build']
 
 # See warnings about bad links
 nitpicky = True
-# we intentionally link outside images
-suppress_warnings = ['image.nonlocal_uri']
+nitpick_ignore = [('', "Pygments lexer name 'ipython' is not known")]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -106,6 +110,7 @@ suppress_warnings = ['image.nonlocal_uri']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+highlight_language = 'python3'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -120,28 +125,24 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 
 # The theme is set by the make target
-html_theme = os.environ.get('SPHX_GLR_THEME', 'default')
+html_theme = os.environ.get('SPHX_GLR_THEME', 'rtd')
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed
 # from docs.readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-# only import rtd theme and set it if want to build docs locally
-if not on_rtd and html_theme == 'rtd':
-    import sphinx_rtd_theme
+if html_theme == 'rtd':
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
-# otherwise, readthedocs.org uses their theme by default, so no need to
-# specify it
-
 
 def setup(app):
-    app.add_stylesheet('theme_override.css')
+    """Sphinx setup function."""
+    app.add_css_file('theme_override.css')
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+# html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -198,7 +199,7 @@ html_static_path = ['_static']
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 #html_show_sphinx = True
@@ -300,31 +301,36 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/{.major}'.format(sys.version_info), None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy', None),
     'matplotlib': ('https://matplotlib.org/', None),
     'mayavi': ('http://docs.enthought.com/mayavi/mayavi', None),
-    'sklearn': ('http://scikit-learn.org/stable', None),
+    'sklearn': ('https://scikit-learn.org/stable', None),
     'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
+    'pandas': ('https://pandas.pydata.org/', None),
 }
 
-from sphinx_gallery.sorting import ExplicitOrder, NumberOfCodeLinesSortKey
 examples_dirs = ['../examples', '../tutorials']
 gallery_dirs = ['auto_examples', 'tutorials']
 
+
+image_scrapers = ('matplotlib',)
 try:
     # Run the mayavi examples and find the mayavi figures if mayavi is
     # installed
     from mayavi import mlab
-    find_mayavi_figures = True
+except Exception:  # can raise all sorts of errors
+    image_scrapers = ('matplotlib',)
+else:
+    image_scrapers += ('mayavi',)
     examples_dirs.append('../mayavi_examples')
     gallery_dirs.append('auto_mayavi_examples')
     # Do not pop up any mayavi windows while running the
     # examples. These are very annoying since they steal the focus.
     mlab.options.offscreen = True
-except Exception:  # can raise all sorts of errors
-    find_mayavi_figures = False
 
+min_reported_time = 0
+if 'SOURCE_DATE_EPOCH' in os.environ:
+    min_reported_time = sys.maxint if sys.version_info[0] == 2 else sys.maxsize
 
 sphinx_gallery_conf = {
     'backreferences_dir': 'gen_modules/backreferences',
@@ -334,11 +340,36 @@ sphinx_gallery_conf = {
         },
     'examples_dirs': examples_dirs,
     'gallery_dirs': gallery_dirs,
-    'subsection_order': ExplicitOrder(['../examples/sin_func',
-                                       '../examples/no_output',
-                                       '../tutorials/seaborn']),
-    'within_subsection_order': NumberOfCodeLinesSortKey,
-    'find_mayavi_figures': find_mayavi_figures,
+    'image_scrapers': image_scrapers,
+    # specify the order of examples to be according to filename
+    'within_subsection_order': FileNameSortKey,
     'expected_failing_examples': ['../examples/no_output/plot_raise.py',
-                                  '../examples/no_output/plot_syntaxerror.py']
+                                  '../examples/no_output/plot_syntaxerror.py'],
+    'min_reported_time': min_reported_time,
+    'binder': {'org': 'sphinx-gallery',
+               'repo': 'sphinx-gallery.github.io',
+               'branch': 'master',
+               'binderhub_url': 'https://mybinder.org',
+               'dependencies': './binder/requirements.txt',
+               'notebooks_dir': 'notebooks',
+               'use_jupyter_lab': True,
+               },
+    'show_memory': True,
+    'junit': os.path.join('sphinx-gallery', 'junit-results.xml'),
+    # capture raw HTML or, if not present, __repr__ of last expression in
+    # each code block
+    'capture_repr': ('_repr_html_', '__repr__'),
+}
+
+# Remove matplotlib agg warnings from generated doc when using plt.show
+warnings.filterwarnings("ignore", category=UserWarning,
+                        message='Matplotlib is currently using agg, which is a'
+                                ' non-GUI backend, so cannot show the figure.')
+
+html_context = {
+    'current_version': 'dev' if 'dev' in version else 'stable',
+    'versions': (
+        ('dev', 'https://sphinx-gallery.github.io/dev'),
+        ('stable', 'https://sphinx-gallery.github.io/stable'),
+    )
 }

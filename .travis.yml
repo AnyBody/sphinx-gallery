@@ -1,86 +1,61 @@
 language: python
-sudo: false
-addons:
-  apt:
-    packages:
-    - xvfb # For mayavi headless
 
-virtualenv:
-        system_site_packages: true
+dist: xenial
+sudo: false
+
+services:
+  - xvfb # For mayavi headless
 
 matrix:
   include:
     - os: linux
-      env: DISTRIB="ubuntu" PYTHON_VERSION="2.7"
+      env: DISTRIB="ubuntu" PYTHON_VERSION="3.6" SPHINXOPTS=""
       addons:
         apt:
           packages:
-            - python-numpy
-            - python-matplotlib
-            - python-scipy
-            - python-pip
-            - python-coverage
-            - cython
-            - python-pandas
-    # This environment tests is for mayavi
+            - python3-numpy
+            - python3-matplotlib
+            - python3-pip
+            - python3-coverage
     - os: linux
-      env: DISTRIB="conda" PYTHON_VERSION="2.7"
-    # This environment tests the Python 3 versions
-    - os: linux
-      env: DISTRIB="conda" PYTHON_VERSION="3.4"
-    - os: linux
-      env: DISTRIB="conda" PYTHON_VERSION="3.5"
+      env: DISTRIB="conda" PYTHON_VERSION="3.5" SPHINX_VERSION="==1.8.3"
     - os: linux
       env: DISTRIB="conda" PYTHON_VERSION="3.6"
     - os: linux
-      dist: trusty
-      python: 'nightly'
-  allow_failures:
+      env: DISTRIB="conda" PYTHON_VERSION="3.6" LOCALE=C
+    - os: linux
+      env: DISTRIB="conda" PYTHON_VERSION="3.7" LOCALE=C
+           SPHINXOPTS="-nWT --keep-going"
+    - os: linux
+      env: DISTRIB="conda" PYTHON_VERSION="3.7" SPHINX_VERSION="dev"
+    - python: 3.7
+      env: DISTRIB="minimal"
     - python: "nightly"
+      env: PYTHON_VERSION="nightly"
+      os: linux
+      addons:
+        apt:
+          packages:
+            libblas-dev
+            liblapack-dev
+            gfortran
 
 before_install:
-    - if [ "$DISTRIB" == "conda" ]; then
-         wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-         chmod +x miniconda.sh;
-         ./miniconda.sh -b;
-         export PATH=/home/travis/miniconda2/bin:$PATH;
-         conda update --yes conda;
-      fi
+  # Make sure that things work even if the locale is set to C (which
+  # effectively means ASCII). Some of the input rst files have unicode
+  # characters and we need to deal with this gracefully.
+  - |
+    if [[ $LOCALE == C ]]; then
+        export LC_CTYPE=C
+        export LC_ALL=C
+        export LANG=C
+    fi
 
 install:
-    # force no mkl because mayavi requires old version of numpy
-    # which then crashes with pandas and seaborn
-    - if [ "$DISTRIB" == "conda" ]; then
-        conda create --yes -n testenv python=$PYTHON_VERSION pip nomkl numpy
-        setuptools matplotlib pillow sphinx pytest pytest-cov coverage seaborn;
-        source activate testenv;
-        if [ "$PYTHON_VERSION" == "2.7" ]; then
-          conda install --yes mayavi;
-        fi;
-      fi;
-    - |
-      if [ "$DISTRIB" == "ubuntu" ]; then
-        # Use a separate virtual environment that the one provided by
-        # Travis because it contains numpy and we want to use numpy
-        # from apt-get
-        deactivate
-        virtualenv --system-site-packages testvenv
-        source testvenv/bin/activate
-        pip install -r requirements.txt
-        pip install seaborn sphinx==1.4.9 pytest pytest-cov
-      fi
-    - python setup.py install
-
-# To test the mayavi environment follow the instructions at
-# https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
-before_script:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # give xvfb some time to start
+  - source continuous_integration/travis/install.sh
 
 script:
-    - python setup.py test
-    - pytest sphinx_gallery
-    - cd doc
-    - make html-noplot
-    - make html -j 2
+  - bash continuous_integration/travis/test_script.sh
+
+after_success:
+  - bash continuous_integration/travis/after_success.sh

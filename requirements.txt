@@ -1,5 +1,1 @@
-setuptools
-matplotlib
-pillow
-sphinx
-pytest
+sphinx>=1.8.3

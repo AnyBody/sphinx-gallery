@@ -22,9 +22,10 @@ every module.
    gen_gallery
    backreferences
    gen_rst
+   scrapers
    py_source_parser
    docs_resolv
    notebook
    downloads
-   docs_resolv
    sorting
+   binder

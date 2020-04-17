@@ -15,7 +15,10 @@ import argparse
 import json
 import re
 import sys
+import copy
+
 from .py_source_parser import split_code_and_text_blocks
+from .utils import replace_py_ipynb
 
 
 def jupyter_notebook_skeleton():
@@ -98,18 +101,24 @@ def rst2md(text):
     return text
 
 
-def jupyter_notebook(script_blocks):
+def jupyter_notebook(script_blocks, gallery_conf):
     """Generate a Jupyter notebook file cell-by-cell
 
     Parameters
     ----------
-    script_blocks: list
-        script execution cells
+    script_blocks : list
+        Script execution cells.
+    gallery_conf : dict
+        The sphinx-gallery configuration dictionary.
     """
-
+    first_cell = gallery_conf["first_notebook_cell"]
+    last_cell = gallery_conf["last_notebook_cell"]
     work_notebook = jupyter_notebook_skeleton()
-    add_code_cell(work_notebook, "%matplotlib inline")
+    if first_cell is not None:
+        add_code_cell(work_notebook, first_cell)
     fill_notebook(work_notebook, script_blocks)
+    if last_cell is not None:
+        add_code_cell(work_notebook, last_cell)
 
     return work_notebook
 
@@ -154,7 +163,8 @@ def fill_notebook(work_notebook, script_blocks):
 
     Parameters
     ----------
-    script_blocks : list of tuples
+    script_blocks : list
+        Each list element should be a tuple of (label, content, lineno).
     """
 
     for blabel, bcontent, lineno in script_blocks:
@@ -178,6 +188,7 @@ def python_to_jupyter_cli(args=None, namespace=None):
 
     Takes the same arguments as ArgumentParser.parse_args
     """
+    from . import gen_gallery  # To avoid circular import
     parser = argparse.ArgumentParser(
         description='Sphinx-Gallery Notebook converter')
     parser.add_argument('python_src_file', nargs='+',
@@ -189,5 +200,6 @@ def python_to_jupyter_cli(args=None, namespace=None):
     for src_file in args.python_src_file:
         file_conf, blocks = split_code_and_text_blocks(src_file)
         print('Converting {0}'.format(src_file))
-        example_nb = jupyter_notebook(blocks)
-        save_notebook(example_nb, src_file.replace('.py', '.ipynb'))
+        gallery_conf = copy.deepcopy(gen_gallery.DEFAULT_GALLERY_CONF)
+        example_nb = jupyter_notebook(blocks, gallery_conf)
+        save_notebook(example_nb, replace_py_ipynb(src_file))

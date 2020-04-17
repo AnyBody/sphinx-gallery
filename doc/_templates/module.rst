@@ -1,5 +1,5 @@
 .. Please when editing this file make sure to keep it matching the
-   docs in ../advanced_configuration.rst:reference_to_examples
+   docs in ../configuration.rst:reference_to_examples
 
 {{ fullname }}
 {{ underline }}
@@ -20,7 +20,7 @@
 
    .. raw:: html
 
-	       <div style='clear:both'></div>
+	       <div class="sphx-glr-clear"></div>
 
    {%- endfor %}
    {% endif %}
@@ -35,6 +35,12 @@
    {% for item in classes %}
    .. autoclass:: {{ item }}
       :members:
+
+   .. include:: backreferences/{{fullname}}.{{item}}.examples
+
+   .. raw:: html
+
+	       <div class="sphx-glr-clear"></div>
 
    {%- endfor %}
    {% endif %}

@@ -14,11 +14,6 @@ import pytest
 import sphinx_gallery.gen_rst as sg
 from sphinx_gallery.notebook import (rst2md, jupyter_notebook, save_notebook,
                                      python_to_jupyter_cli)
-try:
-    FileNotFoundError
-except NameError:
-    # Python2
-    FileNotFoundError = IOError
 
 
 def test_latex_conversion():
@@ -78,10 +73,11 @@ For more details on interpolation see the page `channel_interpolation`.
     assert rst2md(rst) == markdown
 
 
-def test_jupyter_notebook():
-    """Test that written ipython notebook file corresponds to python object"""
-    file_conf, blocks = sg.split_code_and_text_blocks('tutorials/plot_parse.py')
-    example_nb = jupyter_notebook(blocks)
+def test_jupyter_notebook(gallery_conf):
+    """Test that written ipython notebook file corresponds to python object."""
+    file_conf, blocks = sg.split_code_and_text_blocks(
+        'tutorials/plot_parse.py')
+    example_nb = jupyter_notebook(blocks, gallery_conf)
 
     with tempfile.NamedTemporaryFile('w', delete=False) as f:
         save_notebook(example_nb, f.name)
@@ -90,6 +86,33 @@ def test_jupyter_notebook():
             assert json.load(fname) == example_nb
     finally:
         os.remove(f.name)
+    assert example_nb.get('cells')[0]['source'][0] == "%matplotlib inline"
+
+    # Test custom first cell text
+    test_text = '# testing\n%matplotlib notebook'
+    gallery_conf['first_notebook_cell'] = test_text
+    example_nb = jupyter_notebook(blocks, gallery_conf)
+    assert example_nb.get('cells')[0]['source'][0] == test_text
+
+    # Test empty first cell text
+    test_text = None
+    gallery_conf['first_notebook_cell'] = test_text
+    example_nb = jupyter_notebook(blocks, gallery_conf)
+    cell_src = example_nb.get('cells')[0]['source'][0]
+    assert cell_src.startswith('\nAlternating text and code')
+
+    # Test custom last cell text
+    test_text = '# testing last cell'
+    gallery_conf['last_notebook_cell'] = test_text
+    example_nb = jupyter_notebook(blocks, gallery_conf)
+    assert example_nb.get('cells')[-1]['source'][0] == test_text
+
+    # Test empty first cell text
+    test_text = None
+    gallery_conf['last_notebook_cell'] = test_text
+    example_nb = jupyter_notebook(blocks, gallery_conf)
+    cell_src = example_nb.get('cells')[-1]['source'][0]
+    assert cell_src.startswith("Last text block.\n\nThat's all folks !")
 
 ###############################################################################
 # Notebook shell utility
@@ -111,6 +134,6 @@ def test_missing_file():
 def test_file_is_generated():
     """User passes good python file. Check notebook file is created"""
 
-    python_to_jupyter_cli(['examples/plot_quantum.py'])
-    assert os.path.isfile('examples/plot_quantum.ipynb')
-    os.remove('examples/plot_quantum.ipynb')
+    python_to_jupyter_cli(['examples/plot_0_sin.py'])
+    assert os.path.isfile('examples/plot_0_sin.ipynb')
+    os.remove('examples/plot_0_sin.ipynb')
